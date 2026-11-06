@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Tempest & Bloom Caption Generator</title>
+<style>
+  /* Layout: single centred column of cards on a beige polka-dot ground; settings, context, action, output, refine. Single-theme by design (brand look). */
+  :root {
+    --bg: #F5F0E8;
+    --dot: rgba(212, 197, 176, 0.45);
+    --card: #FFFFFF;
+    --navy: #1B2A4A;
+    --navy-soft: #3F4D6B;
+    --grey: #7A7F8C;
+    --pink: #F4A7B9;
+    --pink-deep: #E58BA1;
+    --pink-wash: #FDEEF2;
+    --field: #F5F0E8;
+    --field-border: #E8E0D0;
+    --ok: #4E7D5B;
+    --warn: #A3542F;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    --shadow: 0 1px 2px rgba(27, 42, 74, 0.04), 0 6px 20px rgba(27, 42, 74, 0.06);
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    background-image: radial-gradient(circle at center, var(--dot) 0.75px, transparent 1.05px);
+    background-size: 28px 28px;
+    color: var(--navy);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    padding-block: 48px 72px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  header { text-align: center; display: flex; flex-direction: column; gap: 8px; padding-bottom: 4px; }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 42px;
+    line-height: 1.1;
+    margin: 0;
+    color: var(--navy);
+    text-wrap: balance;
+  }
+  .sub { color: var(--grey); font-size: 13px; letter-spacing: 0.02em; margin: 0; }
+
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 21px;
+    margin: 0;
+    color: var(--navy);
+  }
+  .card-head { display: flex; flex-direction: column; gap: 4px; }
+  .card-head p { margin: 0; color: var(--grey); font-size: 13px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; }
+  .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .field.full { grid-column: 1 / -1; }
+  label, .label {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--navy);
+  }
+  .hint { font-size: 12px; color: var(--grey); margin: 0; }
+  select, textarea, input[type="text"] {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--navy);
+    background: var(--field);
+    border: 1.5px solid var(--field-border);
+    border-radius: 10px;
+    padding: 11px 13px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 38px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%231B2A4A' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+  }
+  textarea { resize: vertical; line-height: 1.6; }
+  select:focus, textarea:focus, input[type="text"]:focus {
+    border-color: var(--pink-deep);
+    box-shadow: 0 0 0 3px rgba(244, 167, 185, 0.28);
+  }
+  ::placeholder { color: #9A9688; }
+
+  .check {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    font-size: 14px; font-weight: 400; text-transform: none; letter-spacing: 0;
+  }
+  .check input { width: 18px; height: 18px; accent-color: var(--pink-deep); margin: 0; cursor: pointer; }
+  .check-note { font-size: 12px; color: var(--grey); margin: 2px 0 0 28px; }
+
+  .go { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .btn-primary {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--navy);
+    background: var(--pink);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 44px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(244, 167, 185, 0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(244, 167, 185, 0.55); }
+  .btn-primary:disabled { opacity: 0.6; cursor: default; transform: none; }
+  .btn-primary:focus-visible, .btn-ghost:focus-visible, .btn-chip:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--navy); outline-offset: 3px;
+  }
+  .btn-ghost {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--navy);
+    background: var(--field);
+    border: 1.5px solid var(--navy);
+    border-radius: 50px;
+    padding: 12px 26px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-ghost:hover:not(:disabled) { background: #EDE5D7; }
+  .btn-ghost:disabled { opacity: 0.55; cursor: default; }
+  .refine-actions { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .refine-actions .btn-primary { font-size: 15px; padding: 12px 30px; }
+
+  .code-wrap { display: flex; flex-direction: column; gap: 7px; width: min(280px, 100%); }
+  .code-wrap input { width: 100%; font-family: var(--sans); font-size: 14px; color: var(--navy); background: var(--field); border: 1.5px solid var(--field-border); border-radius: 10px; padding: 11px 13px; outline: none; }
+  .code-wrap input:focus { border-color: var(--pink-deep); box-shadow: 0 0 0 3px rgba(244, 167, 185, 0.28); }
+  .status { font-size: 13px; color: var(--grey); min-height: 1.2em; text-align: center; }
+  .status.err { color: var(--warn); }
+  .error-box {
+    background: #FBEFEA; color: var(--warn); border-radius: 12px; padding: 12px 16px; font-size: 13px;
+  }
+
+  .output { display: flex; flex-direction: column; gap: 18px; }
+  .output-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .output-head h2 { font-size: 26px; }
+  .picked { font-size: 12px; color: var(--grey); }
+  .picked b { color: var(--navy); font-weight: 700; }
+
+  .cap {
+    background: var(--card);
+    border-radius: 14px;
+    border-left: 3px solid var(--pink);
+    box-shadow: var(--shadow);
+    padding: 22px 24px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+  }
+  .cap-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .cap-num {
+    font-family: var(--sans); font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--pink-deep);
+  }
+  .voice {
+    font-size: 11px; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 20px;
+    background: #EEF4EF; color: var(--ok);
+  }
+  .voice.flag { background: #FBEFEA; color: var(--warn); }
+  .cap textarea {
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--navy);
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 10px;
+    padding: 6px 8px;
+    margin: -6px -8px;
+    width: calc(100% + 16px);
+    resize: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .cap textarea:hover { border-color: var(--field-border); }
+  .cap textarea:focus { background: #FDFBF7; border-color: var(--pink-deep); box-shadow: none; }
+  .approach { font-size: 12.5px; font-style: italic; color: var(--grey); margin: 0; }
+  .flags { font-size: 12px; color: var(--warn); margin: 0; }
+  details { font-size: 13px; color: var(--navy-soft); }
+  summary {
+    cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--navy); list-style: none; display: inline-flex; align-items: center; gap: 6px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "+"; color: var(--pink-deep); font-size: 14px; width: 10px; }
+  details[open] summary::before { content: "\2013"; }
+  .why-body { padding: 8px 0 0 16px; line-height: 1.6; }
+  .why-body b { color: var(--navy); }
+
+  .cap-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px; border-top: 1px solid #F1ECE3; margin-top: 2px; padding-top: 14px; }
+  .btn-chip {
+    font-family: var(--sans); font-size: 12.5px; font-weight: 700; color: var(--navy);
+    background: var(--field); border: 1.5px solid var(--field-border); border-radius: 50px;
+    padding: 8px 14px; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .btn-chip:hover:not(:disabled) { border-color: var(--pink-deep); background: var(--pink-wash); }
+  .btn-chip.primary { background: var(--pink); border-color: var(--pink); }
+  .btn-chip.primary:hover:not(:disabled) { background: var(--pink-deep); border-color: var(--pink-deep); }
+  .btn-chip:disabled { opacity: 0.5; cursor: default; }
+
+  .cap.busy textarea, .cap.busy .approach, .cap.busy details { opacity: 0.35; }
+  .busy-note {
+    position: absolute; right: 22px; top: 20px; font-size: 12px; color: var(--navy);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .spin {
+    width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--pink); border-top-color: transparent;
+    animation: spin 0.8s linear infinite; display: inline-block;
+  }
+  .loading-block {
+    display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 16px;
+    color: var(--navy-soft); font-size: 14px; text-align: center;
+  }
+  .loading-block .spin { width: 22px; height: 22px; border-width: 2.5px; }
+  .skeleton { height: 120px; border-radius: 14px; background: linear-gradient(90deg, #FFFFFF 0%, #FBF7F1 50%, #FFFFFF 100%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; border-left: 3px solid var(--pink); box-shadow: var(--shadow); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .spin, .skeleton { animation: none; }
+    .btn-primary:hover:not(:disabled) { transform: none; }
+  }
+  .stop { font-size: 12px; background: none; border: none; color: var(--grey); text-decoration: underline; cursor: pointer; padding: 0; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    background: var(--navy); color: #FFFFFF; font-size: 13px; padding: 10px 18px; border-radius: 30px;
+    box-shadow: 0 6px 18px rgba(27, 42, 74, 0.25); z-index: 20;
+  }
+
+  @media (max-width: 640px) {
+    .wrap { padding-block: 32px 56px; gap: 22px; }
+    h1 { font-size: 34px; }
+    .card { padding: 22px 18px; }
+    .grid { grid-template-columns: 1fr; }
+    .cap { padding: 20px 18px 16px; }
+      .refine-actions { flex-direction: column-reverse; }
+    .refine-actions button { width: 100%; }
+    .busy-note { position: static; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Caption Generator</h1>
+    <p class="sub">Tempest &amp; Bloom | Your brand voice, every time.</p>
+  </header>
+
+  <section class="card" aria-labelledby="s1">
+    <div class="card-head">
+      <h2 id="s1">Your post details</h2>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="pillar">Content pillar</label>
+        <select id="pillar">
+          <option value="auto">Auto-select for me</option>
+          <option>Belief Shifters</option>
+          <option>Proof Stackers</option>
+          <option>Authority Builders</option>
+          <option>Sales Drivers</option>
+          <option>Value Givers</option>
+          <option>Story Connectors</option>
+        </select>
+        <p class="hint" id="pillarHint">We'll match the pillar to your post.</p>
+      </div>
+      <div class="field">
+        <label for="platform">Platform</label>
+        <select id="platform">
+          <option>Instagram Feed</option>
+          <option>Instagram Carousel</option>
+          <option>Instagram Reel</option>
+          <option>Facebook Post</option>
+          <option>Google Business Profile</option>
+          <option>TikTok</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="length">Caption length</label>
+        <select id="length">
+          <option value="Short">Short: 1–2 sentences</option>
+          <option value="Medium" selected>Medium: 3–5 sentences</option>
+          <option value="Long">Long: Storytelling or educational format</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tone">Tone</label>
+        <select id="tone">
+          <option value="auto">Auto-match</option>
+          <option>Warm &amp; Conversational</option>
+          <option>Dry &amp; Cheeky</option>
+          <option>Confident &amp; Educational</option>
+          <option>Soft &amp; Elevated</option>
+          <option>Direct &amp; Punchy</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label for="cta">Call to action</label>
+        <select id="cta">
+          <option value="auto">Auto-select</option>
+          <option>Follow for more</option>
+          <option>Book an appointment</option>
+          <option>Save this post</option>
+          <option>Share with a friend</option>
+          <option>Comment below</option>
+          <option>No CTA</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="s2">
+    <div class="card-head">
+      <h2 id="s2">Tell us about your post</h2>
+    </div>
+    <div class="field">
+      <label for="about">What's your post about?</label>
+      <textarea id="about" rows="4" placeholder="Describe your content, paste your reel script, explain what's happening in the video or tell us what you want to say..."></textarea>
+    </div>
+    <div class="field">
+      <label for="specifics">Anything specific to mention?</label>
+      <textarea id="specifics" rows="2" placeholder="Service, product, offer, client details, trigger word or anything that must be included..."></textarea>
+      <p class="hint">Add a trigger word here (LASHES, LIFT, BROWS, XMAS, BOOK, VOUCHER or STORY) and the captions will end with it. Leave it out and the right one is picked when the post needs one.</p>
+    </div>
+    <div>
+      <label class="check" for="hashtags">
+        <input type="checkbox" id="hashtags">
+        Include hashtags
+      </label>
+      <p class="check-note" id="hashNote">Added below the caption.</p>
+    </div>
+  </section>
+
+  <div class="go">
+    <div class="code-wrap" id="codeWrap" hidden>
+      <label for="accessCode">Team passcode</label>
+      <input type="password" id="accessCode" autocomplete="off" placeholder="Enter the passcode">
+    </div>
+    <button class="btn-primary" id="generate" type="button">Write My Captions</button>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </div>
+
+  <section class="output" id="output" hidden aria-labelledby="outHead">
+    <div class="output-head">
+      <h2 id="outHead">Your 5 Caption Options</h2>
+      <span class="picked" id="picked"></span>
+    </div>
+    <div id="caps" class="output"></div>
+
+    <section class="card" aria-labelledby="s3" id="refineCard">
+      <div class="card-head">
+        <h2 id="s3">Want to refine these?</h2>
+        <p>Tell Claude what to change about the captions.</p>
+      </div>
+      <div class="field">
+        <label for="feedback" class="label">What should change?</label>
+        <textarea id="feedback" rows="3" placeholder="e.g. Less nostalgia, more about how it fits around school drop-off. Make number three shorter. Mention the $261 price."></textarea>
+      </div>
+      <div class="refine-actions">
+        <button class="btn-ghost" id="newFive" type="button">Generate 5 New Options</button>
+        <button class="btn-primary" id="refine" type="button">Refine These Captions</button>
+      </div>
+    </section>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  /* Pillar jobs shown in the hint and "Why this works". The full voice brief lives in the edge function. */
+  const PILLARS = {
+    "Belief Shifters": "Shift the thinking that stops her booking, rebooking or trying something new. Name the belief, then gently replace it with a better one.",
+    "Proof Stackers": "Show her it works for women like her, so she trusts the result before she's even in the chair. Let the results and the clients do the talking.",
+    "Authority Builders": "Show her we know our craft, so she trusts our recommendations and feels safe handing her lashes over. Confident and clear, never technical for the sake of it.",
+    "Sales Drivers": "Make the next step obvious and easy. Book, rebook or buy. Practical, confident and persuasive without any pressure.",
+    "Value Givers": "Give her genuinely useful advice that makes her lashes, brows and mornings easier, so we become the people she asks first. Always with a next step.",
+    "Story Connectors": "Build connection so she feels like she already knows us before she walks in. Stories are a sales tool, not a diary, so every one should connect back to the experience of being a client."
+  };
+
+  const IG_TAGS = "#tempestandbloom #perthlashes #perthlashartist #perthbeauty #perthlashextensions #butlerwa #alkimos #clarkson #quinnsrocks #ridgewoodwa #jindalee";
+  const HASHTAGS = {
+    "Instagram Feed": IG_TAGS,
+    "Instagram Carousel": IG_TAGS,
+    "Instagram Reel": IG_TAGS,
+    "TikTok": IG_TAGS,
+    "Facebook Post": "#tempestandbloom #perthlashes #butlerwa",
+    "Google Business Profile": ""
+  };
+
+
+  /* ---------------- Elements & state ---------------- */
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    pillar: $("pillar"), platform: $("platform"), length: $("length"), tone: $("tone"), cta: $("cta"),
+    about: $("about"), specifics: $("specifics"),
+    hashtags: $("hashtags"), hashNote: $("hashNote"), pillarHint: $("pillarHint"),
+    generate: $("generate"), status: $("status"), output: $("output"), caps: $("caps"), picked: $("picked"),
+    feedback: $("feedback"), newFive: $("newFive"), refine: $("refine"), toast: $("toast"),
+    codeWrap: $("codeWrap"), accessCode: $("accessCode")
+  };
+  let captions = []; // {text, pillar, approach, why, busy, error}
+  let lastMeta = { pillar: "", tone: "" };
+  let lastSettings = null;
+  let globalBusy = false;
+  let globalCtl = null;
+
+  /* ---------------- Persistence (per-viewer convenience) ---------------- */
+  const STORE = "tb-caption-gen-v1";
+  function save() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify({ s: readSettings(), captions: captions.map(c => ({ text: c.text, pillar: c.pillar, approach: c.approach, why: c.why })), meta: lastMeta, last: lastSettings }));
+    } catch (e) {}
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.s) {
+        for (const k of ["pillar", "platform", "length", "tone", "cta"]) if (d.s[k] != null) { els[k].value = d.s[k]; if (els[k].selectedIndex < 0) els[k].selectedIndex = 0; }
+        els.about.value = d.s.about || "";
+        els.specifics.value = d.s.specifics || "";
+        els.hashtags.checked = !!d.s.hashtags;
+      }
+      if (Array.isArray(d.captions) && d.captions.length) {
+        captions = d.captions.map(c => ({ ...c, busy: false, error: "" }));
+        lastMeta = d.meta || lastMeta;
+        lastSettings = d.last || readSettings();
+        renderCaptions();
+      }
+    } catch (e) {}
+  }
+
+  const TRIGGERS = ["LASHES", "LIFT", "BROWS", "XMAS", "BOOK", "VOUCHER", "STORY"];
+  function findTrigger(txt) {
+    const m = String(txt || "").match(/\b(LASHES|LIFT|BROWS|XMAS|BOOK|VOUCHER|STORY)\b/);
+    return m ? m[1] : "";
+  }
+  function readSettings() {
+    return {
+      pillar: els.pillar.value, platform: els.platform.value, length: els.length.value, tone: els.tone.value,
+      cta: els.cta.value, trigger: findTrigger(els.specifics.value),
+      about: els.about.value.trim(), specifics: els.specifics.value.trim(), hashtags: els.hashtags.checked
+    };
+  }
+
+  /* ---------------- UI helpers ---------------- */
+  function syncControls() {
+    const p = els.platform.value;
+    if (p === "Google Business Profile") els.hashNote.textContent = "Google Business Profile posts never get hashtags, even when this is ticked.";
+    else if (p === "Facebook Post") els.hashNote.textContent = "Facebook gets a lighter set: #tempestandbloom #perthlashes #butlerwa";
+    else if (p === "TikTok") els.hashNote.textContent = "Added below the caption: brand tags plus Butler, Alkimos, Clarkson, Quinns Rocks, Ridgewood and Jindalee.";
+    else els.hashNote.textContent = "Added below the caption: brand tags plus Butler, Alkimos, Clarkson, Quinns Rocks, Ridgewood and Jindalee.";
+    const pv = els.pillar.value;
+    els.pillarHint.textContent = pv === "auto" ? "We'll match the pillar to your post." : "The job: " + PILLARS[pv];
+  }
+  let toastTimer;
+  function toast(msg) {
+    els.toast.textContent = msg;
+    els.toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { els.toast.hidden = true; }, 2200);
+  }
+  function setStatus(msg, isErr) {
+    els.status.textContent = msg || "";
+    els.status.classList.toggle("err", !!isErr);
+  }
+  function errorCopy(e) {
+    const code = e && e.code;
+    switch (code) {
+      case "bad_access_code":
+        els.codeWrap.hidden = false;
+        setTimeout(() => els.accessCode.focus(), 0);
+        return "Enter the team passcode, then try again.";
+      case "missing_api_key": return "The API key isn't set up on Netlify yet. Add ANTHROPIC_API_KEY in the site's environment variables, then redeploy.";
+      case "bad_api_key": return "Netlify has an API key, but Anthropic doesn't recognise it. Check ANTHROPIC_API_KEY, then redeploy.";
+      case "no_credit": return "The API credit balance has run out for this month. Check Billing on platform.claude.com.";
+      case "overloaded": return "Claude is very busy right now. Give it a minute and try again.";
+      case "rate_limited": return "Too many requests in a short time. Give it a minute and try again.";
+      case "invalid_json": case "empty_completion": return "The captions came back in a format the tool couldn't read. Try again.";
+      case "too_large": return "That post description is very long. Trim the script or description and try again.";
+      case "empty_brief": return "Add a line or two about the post first.";
+      case "network": return "Couldn't reach the caption service. Check your internet connection and try again.";
+      case "cancelled": return "Stopped.";
+      default: return "Something went wrong reaching Claude. Your settings are kept, so just try again.";
+    }
+  }
+  function autoSize(t) {
+    t.style.height = "auto";
+    t.style.height = (t.scrollHeight + 2) + "px";
+  }
+
+  /* ---------------- Voice clean-up and checks ---------------- */
+  function cleanText(t, s) {
+    let x = String(t || "").replace(/\r/g, "");
+    x = x.replace(/\s*[—–]\s*/g, ", ").replace(/ -- /g, ", ");
+    x = x.replace(/!+/g, ".").replace(/\.\.(?!\.)/g, ".");
+    x = x.replace(/,\s*\./g, ".").replace(/, ,/g, ",");
+    x = x.replace(/(^|\n)\s*#[^\n]*/g, "$1"); // strip any stray hashtag lines from the model
+    x = x.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    const tags = s && s.hashtags ? HASHTAGS[s.platform] : "";
+    if (tags) x += "\n\n" + tags;
+    return x;
+  }
+  const BANNED = [
+    [/\bbestie/i, "bestie"], [/\bqueen/i, "queen"], [/\bslay/i, "slay"], [/\bgirlies?\b/i, "girlies"],
+    [/it'?s giving/i, "it's giving"], [/main character/i, "main character"], [/serving (looks|face)/i, "serving looks"],
+    [/obsessed/i, "obsessed"], [/lash goals/i, "lash goals"], [/dream lashes/i, "dream lashes"], [/run,? don'?t walk/i, "run don't walk"],
+    [/\bPOV\b/, "POV"], [/\belevat/i, "elevate"], [/\bunlock/i, "unlock"], [/\btransform/i, "transform"], [/\bindulg/i, "indulge"],
+    [/\bpamper/i, "pamper"], [/\bjourney\b/i, "journey"], [/game[- ]?changer/i, "game-changer"], [/effortless/i, "effortless"],
+    [/self[- ]care sunday/i, "self-care Sunday"], [/here'?s the thing/i, "here's the thing"], [/let that sink in/i, "let that sink in"],
+    [/the truth is/i, "the truth is"], [/let'?s talk about/i, "let's talk about"], [/say goodbye to/i, "say goodbye to"],
+    [/link in (the )?bio/i, "link in bio"], [/send you a copy|download|free guide|checklist|pdf/i, "download promise"], [/\b(MATCH|DEC|DESIGN)\b/, "retired trigger word"], [/\b(re|in)?fills?\b/i, "fills (say lash maintenance)"], [/lash mapping/i, "lash mapping"],
+    [/one[- ]size[- ]fits[- ]all/i, "one-size-fits-all"], [/\bbloody\b/i, "bloody"], [/tag a friend/i, "tag a friend"],
+    [/double tap/i, "double tap"], [/\bflawless/i, "flawless"], [/life[- ]changing/i, "life-changing"], [/don'?t miss out/i, "don't miss out"],
+    [/\bthoughts\?/i, "Thoughts?"], [/let us know in the comments/i, "let us know in the comments"],
+    [/\b(organiz|personaliz|realiz|recogniz|favorit|colorful|\bcolor\b|center\b)/i, "US spelling"]
+  ];
+  const ALLOWED_CAPS = new Set(["LASHES", "LIFT", "BROWS", "XMAS", "BOOK", "VOUCHER", "STORY", "WA", "AM", "PM", "DM", "DMS", "OK"]);
+  function voiceCheck(text, s) {
+    const body = text.split(/\n\n#/)[0];
+    const issues = [];
+    for (const [re, name] of BANNED) if (re.test(body)) issues.push(name);
+    const caps = (body.match(/\b[A-Z]{3,}\b/g) || []).filter(w => !ALLOWED_CAPS.has(w) && w !== (s && s.trigger));
+    if (caps.length) issues.push("all caps: " + [...new Set(caps)].join(", "));
+    const emoji = body.match(/\p{Extended_Pictographic}/gu) || [];
+    if (emoji.length > 1) issues.push(emoji.length + " emoji");
+    if (/[—–]/.test(body)) issues.push("dash");
+    if (/!/.test(body)) issues.push("exclamation mark");
+    if (s && s.platform === "Google Business Profile" && /comment [A-Z]{3,}/.test(body)) issues.push("trigger word on Google");
+    return [...new Set(issues)];
+  }
+
+  /* ---------------- Calling Claude (via the Netlify edge function) ---------------- */
+  const CODE_KEY = "tb-caption-gen-code";
+  function getCode() {
+    const typed = els.accessCode.value.trim();
+    if (typed) return typed;
+    try { return localStorage.getItem(CODE_KEY) || ""; } catch (e) { return ""; }
+  }
+  function rememberCode(code) {
+    if (!code) return;
+    try { localStorage.setItem(CODE_KEY, code); } catch (e) {}
+  }
+  function forgetCode() {
+    try { localStorage.removeItem(CODE_KEY); } catch (e) {}
+  }
+
+  function parseLenient(text) {
+    let t = String(text || "").trim();
+    const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fence) t = fence[1].trim();
+    try { return JSON.parse(t); } catch (e) {}
+    const first = t.search(/[\[{]/);
+    const last = Math.max(t.lastIndexOf("}"), t.lastIndexOf("]"));
+    if (first >= 0 && last > first) {
+      try { return JSON.parse(t.slice(first, last + 1)); } catch (e) {}
+    }
+    throw { code: "invalid_json" };
+  }
+
+  async function callClaude(payload, signal) {
+    const code = getCode();
+    let res;
+    try {
+      res = await fetch("/api/tb-captions", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-access-code": code },
+        body: JSON.stringify(payload),
+        signal,
+      });
+    } catch (e) {
+      if (e && e.name === "AbortError") throw { code: "cancelled" };
+      throw { code: "network" };
+    }
+    if (res.status === 401) { forgetCode(); throw { code: "bad_access_code" }; }
+    if (!res.ok) {
+      const info = await res.json().catch(() => ({}));
+      throw { code: info.error || "upstream_error" };
+    }
+    rememberCode(code);
+    els.codeWrap.hidden = true;
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "", text = "";
+    try {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          let ev; try { ev = JSON.parse(line.slice(5)); } catch (e) { continue; }
+          if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") text += ev.delta.text;
+          if (ev.type === "error") throw { code: (ev.error && ev.error.type === "overloaded_error") ? "overloaded" : "upstream_error" };
+        }
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") throw { code: "cancelled" };
+      throw e && e.code ? e : { code: "upstream_error" };
+    }
+    if (!text.trim()) throw { code: "empty_completion" };
+    return parseLenient(text);
+  }
+
+  function capsPayload() {
+    return captions.map(c => ({ text: c.text, approach: c.approach }));
+  }
+
+  function normaliseOne(o, s) {
+    if (!o || typeof o !== "object" || !o.caption) throw { code: "invalid_json" };
+    return {
+      text: cleanText(o.caption, s),
+      pillar: String(o.pillar || ""),
+      approach: String(o.approach || "").replace(/[—–]/g, ","),
+      why: String(o.why || "").replace(/[—–]/g, ","),
+      busy: false, error: ""
+    };
+  }
+
+  function setGlobalBusy(b, msg) {
+    globalBusy = b;
+    els.generate.disabled = b;
+    els.newFive.disabled = b;
+    els.refine.disabled = b;
+    els.generate.textContent = b ? "Writing your captions..." : "Write My Captions";
+    if (b) {
+      els.status.innerHTML = "";
+      const span = document.createElement("span");
+      span.textContent = msg + " ";
+      const stop = document.createElement("button");
+      stop.type = "button"; stop.className = "stop"; stop.textContent = "Stop";
+      stop.onclick = () => globalCtl && globalCtl.abort();
+      els.status.classList.remove("err");
+      els.status.append(span, stop);
+    }
+    renderCaptions();
+  }
+
+  function showLoadingCards() {
+    els.output.hidden = false;
+    els.caps.innerHTML = "";
+    const lb = document.createElement("div");
+    lb.className = "loading-block";
+    lb.innerHTML = '<span class="spin" aria-hidden="true"></span><span>Writing five options in your voice. This usually takes 20 to 40 seconds.</span>';
+    els.caps.append(lb);
+    for (let k = 0; k < 5; k++) { const sk = document.createElement("div"); sk.className = "skeleton"; els.caps.append(sk); }
+  }
+
+  async function runFive(kind) {
+    if (globalBusy) return;
+    const s = readSettings();
+    if (!s.about && !s.specifics) {
+      setStatus("Add a line or two about the post first, so the captions have something real to work with.", true);
+      els.about.focus();
+      return;
+    }
+    if (kind === "refine" && !captions.length) return runFive("generate");
+    const payload = {
+      mode: kind === "refine" ? "refine" : kind === "new" ? "new" : "generate",
+      settings: s,
+      captions: kind === "generate" ? [] : capsPayload(),
+      feedback: els.feedback.value.trim()
+    };
+    const keep = captions.slice();
+    globalCtl = new AbortController();
+    const useSettings = s;
+    if (kind !== "refine" || !captions.length) showLoadingCards();
+    setGlobalBusy(true, kind === "refine" ? "Refining your five captions..." : "Writing five options in your voice...");
+    if (kind === "refine") captions.forEach(c => c.busy = true), renderCaptions();
+    try {
+      const res = await callClaude(payload, globalCtl.signal);
+      const list = res && Array.isArray(res.captions) ? res.captions : null;
+      if (!list || list.length < 1) throw { code: "invalid_json" };
+      captions = list.slice(0, 5).map(o => normaliseOne(o, useSettings));
+      lastMeta = { pillar: String(res.pillar || ""), tone: String(res.tone || "") };
+      lastSettings = useSettings;
+      setStatus("");
+      save();
+    } catch (e) {
+      captions = keep.map(c => ({ ...c, busy: false }));
+      setStatus(errorCopy(e), e && e.code !== "cancelled");
+      if (!captions.length) els.output.hidden = true;
+    } finally {
+      globalCtl = null;
+      setGlobalBusy(false);
+      if (captions.length) els.output.hidden = false;
+    }
+  }
+
+  async function runOne(i, mode) {
+    const c = captions[i];
+    if (!c || c.busy || globalBusy) return;
+    const s = readSettings();
+    const useS = (s.about || s.specifics) ? s : (lastSettings || s);
+    c.busy = true; c.error = ""; c.mode = mode;
+    renderCaptions();
+    try {
+      const o = await callClaude({ mode: "one", oneMode: mode, index: i, settings: useS, captions: capsPayload() });
+      const n = normaliseOne(o, useS);
+      captions[i] = n;
+      save();
+    } catch (e) {
+      c.busy = false;
+      c.error = errorCopy(e);
+    }
+    captions[i].busy = false;
+    renderCaptions();
+  }
+
+  async function copyCaption(i, btn) {
+    const text = captions[i].text;
+    const done = () => { btn.textContent = "Copied"; toast("Caption copied"); setTimeout(() => { btn.textContent = "Copy Caption"; }, 1600); };
+    try {
+      await navigator.clipboard.writeText(text);
+      done();
+    } catch (e) {
+      const ta = document.querySelector('[data-cap="' + i + '"] textarea');
+      if (ta) {
+        ta.focus(); ta.select();
+        try { if (document.execCommand("copy")) { done(); return; } } catch (err) {}
+        toast("Caption selected. Press Ctrl+C or Cmd+C to copy.");
+      }
+    }
+  }
+
+  /* ---------------- Rendering ---------------- */
+  function renderCaptions() {
+    if (!captions.length) return;
+    if (globalBusy && !captions.some(c => c.busy)) return; // loading skeleton is showing
+    els.output.hidden = false;
+    els.picked.innerHTML = "";
+    if (lastMeta.pillar || lastMeta.tone) {
+      els.picked.textContent = "";
+      const add = (label, val) => {
+        if (!val) return;
+        if (els.picked.childNodes.length) els.picked.append(document.createTextNode("  ·  "));
+        els.picked.append(document.createTextNode(label + " "));
+        const b = document.createElement("b"); b.textContent = val; els.picked.append(b);
+      };
+      add("Pillar", lastMeta.pillar);
+      add("Tone", lastMeta.tone);
+    }
+    const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest("[data-cap]");
+    const focusIdx = focused ? Number(focused.getAttribute("data-cap")) : -1;
+    els.caps.innerHTML = "";
+    captions.forEach((c, i) => {
+      const card = document.createElement("article");
+      card.className = "cap" + (c.busy ? " busy" : "");
+      card.setAttribute("data-cap", i);
+      card.setAttribute("aria-busy", c.busy ? "true" : "false");
+
+      const top = document.createElement("div"); top.className = "cap-top";
+      const num = document.createElement("span"); num.className = "cap-num"; num.textContent = "Caption " + String(i + 1).padStart(2, "0");
+      top.append(num);
+      const issues = voiceCheck(c.text, lastSettings || readSettings());
+      const v = document.createElement("span");
+      v.className = "voice" + (issues.length ? " flag" : "");
+      v.textContent = issues.length ? "Check the voice" : "Voice check passed";
+      top.append(v);
+      card.append(top);
+
+      if (c.busy) {
+        const bn = document.createElement("div"); bn.className = "busy-note";
+        bn.innerHTML = '<span class="spin" aria-hidden="true"></span>';
+        const t = document.createElement("span");
+        t.textContent = c.mode === "voice" ? "Making it more like us..." : c.mode === "angle" ? "Trying another angle..." : globalBusy ? "Refining..." : "Rewriting...";
+        bn.append(t); card.append(bn);
+      }
+
+      const ta = document.createElement("textarea");
+      ta.id = "cap-text-" + i;
+      ta.value = c.text;
+      ta.rows = 3;
+      ta.setAttribute("aria-label", "Caption " + (i + 1) + " text, editable");
+      ta.disabled = c.busy;
+      ta.addEventListener("input", () => {
+        captions[i].text = ta.value; autoSize(ta);
+        const iss = voiceCheck(ta.value, lastSettings || readSettings());
+        v.className = "voice" + (iss.length ? " flag" : "");
+        v.textContent = iss.length ? "Check the voice" : "Voice check passed";
+        flags.textContent = iss.length ? "Worth a look: " + iss.join(", ") + "." : "";
+        flags.hidden = !iss.length;
+        save();
+      });
+      card.append(ta);
+
+      const flags = document.createElement("p"); flags.className = "flags";
+      flags.textContent = issues.length ? "Worth a look: " + issues.join(", ") + "." : "";
+      flags.hidden = !issues.length;
+      card.append(flags);
+
+      if (c.approach) {
+        const ap = document.createElement("p"); ap.className = "approach"; ap.textContent = c.approach; card.append(ap);
+      }
+
+      if (c.why || c.pillar) {
+        const d = document.createElement("details");
+        const sm = document.createElement("summary"); sm.textContent = "Why this works";
+        const body = document.createElement("div"); body.className = "why-body";
+        const p1 = document.createElement("div");
+        const b1 = document.createElement("b"); b1.textContent = "Pillar: ";
+        p1.append(b1, document.createTextNode((c.pillar || lastMeta.pillar || "") + (PILLARS[c.pillar] ? ". " + PILLARS[c.pillar] : "")));
+        const p2 = document.createElement("div"); p2.style.marginTop = "6px";
+        const b2 = document.createElement("b"); b2.textContent = "Approach: ";
+        p2.append(b2, document.createTextNode(c.approach || ""));
+        const p3 = document.createElement("div"); p3.style.marginTop = "6px";
+        p3.textContent = c.why || "";
+        body.append(p1, p2, p3);
+        d.append(sm, body);
+        card.append(d);
+      }
+
+      if (c.error) {
+        const er = document.createElement("div"); er.className = "error-box"; er.textContent = c.error; card.append(er);
+      }
+
+      const acts = document.createElement("div"); acts.className = "cap-actions";
+      const mk = (label, cls, fn) => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "btn-chip" + (cls ? " " + cls : "");
+        b.textContent = label; b.disabled = c.busy || globalBusy; b.addEventListener("click", () => fn(b)); return b;
+      };
+      acts.append(
+        mk("Copy Caption", "primary", (b) => copyCaption(i, b)),
+        mk("Regenerate This Option", "", () => runOne(i, "regenerate")),
+        mk("Make It More Like Us", "", () => runOne(i, "voice")),
+        mk("Try Another Angle", "", () => runOne(i, "angle"))
+      );
+      card.append(acts);
+      els.caps.append(card);
+      requestAnimationFrame(() => autoSize(ta));
+      if (i === focusIdx && !c.busy) ta.focus({ preventScroll: true });
+    });
+  }
+
+  /* ---------------- Wiring ---------------- */
+  ["pillar", "platform", "length", "tone", "cta"].forEach(k => els[k].addEventListener("change", () => { syncControls(); save(); }));
+  ["about", "specifics", "feedback"].forEach(k => els[k].addEventListener("input", save));
+  els.hashtags.addEventListener("change", () => {
+    // Apply hashtag toggle to existing captions without regenerating
+    const s = readSettings();
+    if (captions.length) {
+      captions.forEach(c => { c.text = cleanText(c.text.split(/\n\n#/)[0], s); });
+      if (lastSettings) lastSettings.hashtags = s.hashtags;
+      renderCaptions();
+    }
+    save();
+  });
+  els.generate.addEventListener("click", () => runFive("generate"));
+  els.newFive.addEventListener("click", () => runFive("new"));
+  els.refine.addEventListener("click", () => runFive("refine"));
+  window.addEventListener("resize", () => document.querySelectorAll(".cap textarea").forEach(autoSize));
+
+  load();
+  syncControls();
+})();
+</script>
+
+</body>
+</html>
